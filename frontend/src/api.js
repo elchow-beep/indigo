@@ -6,7 +6,7 @@
  * need to update the BASE_URL constant below.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
