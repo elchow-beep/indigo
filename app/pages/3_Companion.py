@@ -2,6 +2,7 @@
 app/pages/3_Companion.py
 Indy -- the Integra RAG chatbot companion.
 No sidebar. Works for guest users and profile users.
+Bottom nav + hamburger drawer via inject_bottom_nav().
 """
 
 import os
@@ -13,8 +14,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from app.styles import (
     inject_css,
+    inject_bottom_nav,
     disclaimer_chip,
     section_label,
+    PAGE_COMPANION,
     EMOTION_COLORS,
 )
 
@@ -77,48 +80,15 @@ except Exception as e:
 user = st.session_state.get("user", "guest")
 is_guest = user == "guest"
 
-col_title, col_nav = st.columns([4, 1])
-
-with col_title:
-    st.markdown('<h1>Companion</h1>', unsafe_allow_html=True)
-    st.markdown(
-        '<p style="font-size:16px;font-weight:300;color:#8a8480;margin-top:4px;">'
-        'Reflect with Indy, your integration companion.</p>',
-        unsafe_allow_html=True,
-    )
-
-with col_nav:
-    st.markdown('<div style="margin-top:10px;">', unsafe_allow_html=True)
-    if is_guest:
-        if st.button("Home", use_container_width=True):
-            st.switch_page("main.py")
-    else:
-        st.markdown(
-            f'<div style="background:rgba(196,149,106,0.10);'
-            f'border:1px solid rgba(196,149,106,0.25);border-radius:20px;'
-            f'padding:6px 14px;text-align:center;">'
-            f'<span style="font-family:DM Sans,sans-serif;font-size:13px;'
-            f'font-weight:500;color:#c4956a;">{user}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('<h1>Chat with Indy</h1>', unsafe_allow_html=True)
+st.markdown(
+    '<p style="font-size:16px;font-weight:300;color:#8a8480;margin-top:4px;">'
+    'Reflect with Indy, your integration companion.</p>',
+    unsafe_allow_html=True,
+)
 
 st.markdown('<div style="margin-top:16px;"></div>', unsafe_allow_html=True)
 disclaimer_chip()
-
-if not is_guest:
-    st.markdown('<div style="margin-top:16px;"></div>', unsafe_allow_html=True)
-    col_home, col_journal, col_insights = st.columns(3)
-    with col_home:
-        if st.button("Home", use_container_width=True):
-            st.switch_page("main.py")
-    with col_journal:
-        if st.button("Journal", use_container_width=True):
-            st.switch_page("pages/1_Journal.py")
-    with col_insights:
-        if st.button("Insights", use_container_width=True):
-            st.switch_page("pages/2_Insights.py")
 
 st.divider()
 
@@ -141,6 +111,7 @@ if not pipeline_ready:
         '</div>',
         unsafe_allow_html=True,
     )
+    inject_bottom_nav(active_page=PAGE_COMPANION)
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -224,7 +195,7 @@ else:
             )
 
 # ---------------------------------------------------------------------------
-# Waiting bubble -- renders while pipeline runs on pending_response pass
+# Waiting bubble
 # ---------------------------------------------------------------------------
 
 WAITING_PHRASES = [
@@ -253,7 +224,6 @@ if st.session_state["pending_response"]:
         unsafe_allow_html=True,
     )
 
-    # Retrieve the last user message and run the pipeline
     last_user_msg = next(
         (m["content"] for m in reversed(st.session_state["chat_history"])
          if m["role"] == "user"),
@@ -313,4 +283,10 @@ if user_input:
     st.session_state["chat_history"].append({"role": "user", "content": user_input})
     st.session_state["pending_response"] = True
     st.session_state["pending_context"] = context_to_pass
-    st.rerun()  # immediately rerun to show user bubble, then pipeline runs above
+    st.rerun()
+
+# ---------------------------------------------------------------------------
+# Bottom nav + hamburger
+# ---------------------------------------------------------------------------
+
+inject_bottom_nav(active_page=PAGE_COMPANION)

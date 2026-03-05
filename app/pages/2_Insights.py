@@ -2,7 +2,7 @@
 app/pages/2_Insights.py
 Longitudinal emotion tracking and pattern visualization for Integra.
 Emotion timeline filtered by clickable pill buttons.
-Weekly averages removed.
+Bottom nav + hamburger drawer via inject_bottom_nav().
 """
 
 import json
@@ -19,8 +19,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from app.styles import (
     inject_css,
+    inject_bottom_nav,
     section_label,
-    profile_pill_header,
+    page_header,
+    PAGE_INSIGHTS,
     EMOTION_COLORS,
 )
 
@@ -70,22 +72,7 @@ entries = active_user["entries"]
 # Header
 # ---------------------------------------------------------------------------
 
-profile_pill_header("Insights")
-
-st.markdown(
-    '<p style="font-size:16px;font-weight:300;color:#8a8480;'
-    'margin-top:4px;margin-bottom:20px;">'
-    'Emotional patterns across your integration journey.</p>',
-    unsafe_allow_html=True,
-)
-
-col_home, col_journal = st.columns([1, 1])
-with col_home:
-    if st.button("Home", use_container_width=True):
-        st.switch_page("main.py")
-with col_journal:
-    if st.button("Journal", use_container_width=True):
-        st.switch_page("pages/1_Journal.py")
+page_header("Insights", "Emotional patterns across your integration journey.")
 
 st.divider()
 
@@ -104,6 +91,7 @@ if st.session_state["user"] == "Alex" or len(entries) == 0:
         '</div>',
         unsafe_allow_html=True,
     )
+    inject_bottom_nav(active_page=PAGE_INSIGHTS)
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -175,7 +163,6 @@ def compute_analytics(entries_json: str):
         f"and resolving toward {phase_dominant(entries[phase_size*2:])} by the final entries."
     )
 
-    # Emotions present in this user's data
     present_emotions = sorted(timeline_df["emotion"].unique().tolist())
 
     return timeline_df, dominant_df, theme_df, rec_df, arc_summary, present_emotions
@@ -224,8 +211,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Pill buttons -- one per emotion present in the data
-# Selected emotion stored in session state; clicking same pill deselects
 pill_cols = st.columns(len(present_emotions))
 
 for i, emotion in enumerate(present_emotions):
@@ -234,7 +219,6 @@ for i, emotion in enumerate(present_emotions):
     is_selected = st.session_state["insights_selected_emotion"] == emotion
 
     with pill_cols[i]:
-        # Active pill: solid colored background. Inactive: transparent with colored border.
         if is_selected:
             bg = f"rgba({r},{g},{b},0.25)"
             border = color
@@ -244,18 +228,13 @@ for i, emotion in enumerate(present_emotions):
             border = f"rgba({r},{g},{b},0.30)"
             text_color = f"rgba({r},{g},{b},0.70)"
 
-        if st.button(
-            emotion,
-            key=f"pill_{emotion}",
-            use_container_width=True,
-        ):
+        if st.button(emotion, key=f"pill_{emotion}", use_container_width=True):
             if st.session_state["insights_selected_emotion"] == emotion:
                 st.session_state["insights_selected_emotion"] = None
             else:
                 st.session_state["insights_selected_emotion"] = emotion
             st.rerun()
 
-        # Overlay colored style on this specific button via targeted CSS
         st.markdown(
             f'<style>'
             f'div[data-testid="column"]:nth-child({i+1}) .stButton > button {{'
@@ -272,7 +251,6 @@ for i, emotion in enumerate(present_emotions):
 
 st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
 
-# Chart -- filtered or all
 selected_emotion = st.session_state["insights_selected_emotion"]
 
 if selected_emotion:
@@ -315,7 +293,6 @@ if selected_emotion:
         .configure_point(size=60, color=line_color)
     )
 else:
-    # No selection -- show a prompt to pick one
     st.markdown(
         '<div style="background:#242220;border:1px solid #3a3733;border-radius:10px;'
         'padding:40px;text-align:center;">'
@@ -448,3 +425,9 @@ for _, row in dominant_df.iterrows():
         f'</div>',
         unsafe_allow_html=True,
     )
+
+# ---------------------------------------------------------------------------
+# Bottom nav + hamburger
+# ---------------------------------------------------------------------------
+
+inject_bottom_nav(active_page=PAGE_INSIGHTS)

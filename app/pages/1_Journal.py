@@ -1,7 +1,7 @@
 """
 app/pages/1_Journal.py
 Journal entry browser and new entry submission for Integra.
-No sidebar. Profile pill in header via st.popover.
+No sidebar. Bottom nav + hamburger drawer via inject_bottom_nav().
 Browse / write / result modes managed via session state.
 """
 
@@ -16,10 +16,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from app.styles import (
     inject_css,
+    inject_bottom_nav,
     section_label,
     emotion_badge_row,
     theme_badge_row,
-    profile_pill_header,
+    page_header,
+    PAGE_JOURNAL,
     EMOTION_COLORS,
 )
 
@@ -107,10 +109,6 @@ def render_emotion_bars(emotions: dict):
 
 
 def render_entry_footer(entry_text: str, show_back: bool = False, back_index: int = 0):
-    """
-    Renders the two-button footer row.
-    Uses st.button type="primary" -- no wrapper divs, guaranteed equal height.
-    """
     st.divider()
 
     if show_back:
@@ -152,17 +150,7 @@ entries = active_user["entries"]
 # Header
 # ---------------------------------------------------------------------------
 
-profile_pill_header("Journal")
-
-st.markdown(
-    '<p style="font-size:15px;font-weight:300;color:#8a8480;'
-    'margin-top:4px;margin-bottom:16px;">'
-    'Write about your experience. See what surfaces.</p>',
-    unsafe_allow_html=True,
-)
-
-if st.button("Home", use_container_width=False):
-    st.switch_page("main.py")
+page_header("Journal", "Write about your experience. See what surfaces.")
 
 st.divider()
 
@@ -224,37 +212,31 @@ if st.session_state["user"] == "Alex":
                 unsafe_allow_html=True,
             )
 
+    inject_bottom_nav(active_page=PAGE_JOURNAL)
     st.stop()
 
 # ===========================================================================
-# JORDAN -- mode toggle header
+# JORDAN -- write / result / browse modes
 # ===========================================================================
 
-col_label, col_btn = st.columns([3, 1])
+section_label("Entries")
 
-with col_label:
-    if st.session_state["journal_mode"] == "browse":
-        section_label(f"{len(entries)} Entries")
-    else:
-        section_label("New Entry")
-
-with col_btn:
-    if st.session_state["journal_mode"] == "browse":
-        st.markdown('<div class="primary-btn">', unsafe_allow_html=True)
-        if st.button("+ New Entry", use_container_width=True):
-            st.session_state["journal_mode"] = "write"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        if st.button("Cancel", use_container_width=True):
-            st.session_state["journal_mode"] = "browse"
-            st.rerun()
+col_write, _ = st.columns([1, 3])
+with col_write:
+    st.markdown('<div class="primary-btn">', unsafe_allow_html=True)
+    if st.button("New Entry", use_container_width=True, key="new_entry_btn"):
+        st.session_state["journal_mode"] = "write"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div style="margin-bottom:8px;"></div>', unsafe_allow_html=True)
 
-# Stop everything here if we are in write mode -- prevents any content
-# below from rendering while the textarea is idle or processing.
+# --- WRITE MODE ---
 if st.session_state["journal_mode"] == "write":
+
+    if st.button("Cancel", use_container_width=True):
+        st.session_state["journal_mode"] = "browse"
+        st.rerun()
 
     new_text = st.text_area(
         label="new_entry_input",
@@ -268,6 +250,7 @@ if st.session_state["journal_mode"] == "write":
     st.markdown('</div>', unsafe_allow_html=True)
 
     if not submit_new:
+        inject_bottom_nav(active_page=PAGE_JOURNAL)
         st.stop()
 
     if not new_text.strip():
@@ -276,9 +259,9 @@ if st.session_state["journal_mode"] == "write":
             'Write something first.</p>',
             unsafe_allow_html=True,
         )
+        inject_bottom_nav(active_page=PAGE_JOURNAL)
         st.stop()
 
-    # Run pipeline
     with st.spinner("Analyzing your entry..."):
         try:
             emotion_pipeline, theme_extractor, rec_engine = get_pipelines()
@@ -304,12 +287,10 @@ if st.session_state["journal_mode"] == "write":
         except Exception as e:
             st.error(f"Pipeline error: {e}")
 
+    inject_bottom_nav(active_page=PAGE_JOURNAL)
     st.stop()
 
-# ===========================================================================
-# RESULT MODE
-# ===========================================================================
-
+# --- RESULT MODE ---
 elif st.session_state["journal_mode"] == "result":
 
     result = st.session_state.get("new_entry_result", {})
@@ -364,7 +345,6 @@ elif st.session_state["journal_mode"] == "result":
             unsafe_allow_html=True,
         )
 
-    # Get the index the new entry will occupy after save
     fresh_data = load_users()
     fresh_entries = [u for u in fresh_data["users"] if u["name"] == "Jordan"][0]["entries"]
     new_entry_index = len(fresh_entries) - 1
@@ -375,10 +355,9 @@ elif st.session_state["journal_mode"] == "result":
         back_index=new_entry_index,
     )
 
-# ===========================================================================
-# BROWSE MODE
-# ===========================================================================
+    inject_bottom_nav(active_page=PAGE_JOURNAL)
 
+# --- BROWSE MODE ---
 else:
 
     total = len(entries)
@@ -459,3 +438,5 @@ else:
         )
 
     render_entry_footer(entry_text=entry["text"])
+
+    inject_bottom_nav(active_page=PAGE_JOURNAL)

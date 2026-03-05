@@ -50,5 +50,5 @@ vectorstore = Chroma.from_documents(
     persist_directory="data/chroma"
 )
 
-print(f"✅ Vector store built and saved to data/chroma")
+print(f"Vector store built and saved to data/chroma")
 print(f"   Total vectors: {vectorstore._collection.count()}")
