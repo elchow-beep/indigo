@@ -4,12 +4,12 @@ import { getEntries, getInsights } from "../api.js";
 import EmotionPill from "../components/EmotionPill.jsx";
 
 const QUICK_MOODS = [
-  { label: "calm",      color: "#7ba68f" },
-  { label: "awe",       color: "#7b9ea6" },
+  { label: "calm", color: "#7ba68f" },
+  { label: "awe", color: "#7b9ea6" },
   { label: "gratitude", color: "#c4956a" },
-  { label: "grief",     color: "#7a8fa6" },
+  { label: "grief", color: "#7a8fa6" },
   { label: "overwhelm", color: "#9b7fa6" },
-  { label: "joy",       color: "#a6c47b" },
+  { label: "joy", color: "#a6c47b" },
 ];
 
 function greeting() {
@@ -49,7 +49,7 @@ const s = {
   moodRow: { display: "flex", gap: "8px", padding: "0 20px", overflowX: "auto", paddingBottom: "4px" },
   moodPill: { flexShrink: 0, border: "none", borderRadius: "20px", padding: "7px 14px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "var(--font-body)", transition: "opacity 0.15s ease, transform 0.1s ease" },
   card: { margin: "0 20px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px" },
-  writeCard: { margin: "0 20px", background: "var(--accent-soft)", border: "1px solid var(--accent-border)", borderRadius: "var(--radius-lg)", padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", width: "100%", transition: "border-color 0.15s ease", fontFamily: "var(--font-body)" },
+  writeCard: { margin: "0 20px", background: "var(--accent-soft)", border: "1px solid var(--accent-border)", borderRadius: "var(--radius-lg)", padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", boxSizing: "border-box", transition: "border-color 0.15s ease", fontFamily: "var(--font-body)" },
   writeTitle: { fontFamily: "var(--font-display)", fontSize: "17px", color: "var(--text-primary)", marginBottom: "2px" },
   writeSub: { fontSize: "12px", fontWeight: 300, color: "var(--text-secondary)" },
   cardLabel: { fontSize: "10px", fontWeight: 500, letterSpacing: "0.10em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px" },
@@ -68,8 +68,8 @@ export default function Home({ user, onSwitchProfile }) {
 
   useEffect(() => {
     if (!user) return;
-    getEntries(user.user_id).then((data) => { if (data.entries.length > 0) setRecentEntry(data.entries[0]); }).catch(() => {});
-    getInsights(user.user_id).then((data) => { if (data.has_data) setArcSummary(data.arc_summary); }).catch(() => {});
+    getEntries(user.user_id).then((data) => { if (data.entries.length > 0) setRecentEntry(data.entries[0]); }).catch(() => { });
+    getInsights(user.user_id).then((data) => { if (data.has_data) setArcSummary(data.arc_summary); }).catch(() => { });
   }, [user]);
 
   function handleMoodTap(mood) {

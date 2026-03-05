@@ -53,8 +53,10 @@ const styles = {
   nav: {
     position: "fixed",
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "100%",
+    maxWidth: "480px",
     height: "64px",
     background: "var(--surface)",
     borderTop: "1px solid var(--border)",
@@ -62,9 +64,8 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-around",
     padding: "0 8px",
-    zIndex: 100,
-    // Safe area for phones with home indicator
     paddingBottom: "env(safe-area-inset-bottom)",
+    zIndex: 100,
   },
   tab: {
     flex: 1,
