@@ -28,7 +28,7 @@ export default function BottomSheet({ isOpen, onClose, children }) {
         position: "fixed",
         inset: 0,
         background: "rgba(0,0,0,0.55)",
-        zIndex: 200,
+        zIndex: 300,
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
@@ -42,7 +42,7 @@ export default function BottomSheet({ isOpen, onClose, children }) {
           background: "var(--surface-raised)",
           borderTop: "1px solid var(--border)",
           borderRadius: "20px 20px 0 0",
-          padding: "24px 24px 40px",
+          padding: "24px 24px 88px",
           animation: "sheetSlideUp 0.22s ease-out",
         }}
       >
