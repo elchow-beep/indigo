@@ -220,3 +220,18 @@ def reset_chat(req: ChatResetRequest):
     rag = get_rag_pipeline()
     rag.reset_conversation()
     return {"status": "ok"}
+
+
+@app.delete("/users/{user_id}/entries/{entry_id}")
+def delete_entry(user_id: str, entry_id: str):
+    data = load_users_data()
+    for user in data["users"]:
+        if user["user_id"] == user_id:
+            entries = user.get("entries", [])
+            updated = [e for e in entries if e.get("entry_id") != entry_id]
+            if len(updated) == len(entries):
+                raise HTTPException(status_code=404, detail=f"Entry '{entry_id}' not found")
+            user["entries"] = updated
+            save_users_data(data)
+            return {"status": "ok", "deleted_entry_id": entry_id}
+    raise HTTPException(status_code=404, detail=f"User '{user_id}' not found")

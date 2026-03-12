@@ -32,6 +32,10 @@ export function getEntries(userId) {
   return request(`/users/${userId}/entries`);
 }
 
+export function deleteEntry(userId, entryId) {
+  return request(`/users/${userId}/entries/${entryId}`, { method: "DELETE" });
+}
+
 export function createEntry(userId, text, weekNumber = null, entryType = "journal", checkinEmotion = null) {
   return request("/entries", {
     method: "POST",

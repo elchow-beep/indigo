@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getEntries, createEntry } from "../api.js";
+import { getEntries, createEntry, deleteEntry } from "../api.js";
 import EmotionPill from "../components/EmotionPill.jsx";
 
 /**
@@ -249,51 +249,219 @@ const s = {
     cursor: "pointer",
     fontFamily: "var(--font-body)",
   },
+  // Delete
+  swipeWrapper: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "var(--radius-md)",
+  },
+  swipeDelete: {
+    position: "absolute",
+    top: 0, right: 0, bottom: 0,
+    width: "72px",
+    background: "#a67b7b",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    borderRadius: "0 var(--radius-md) var(--radius-md) 0",
+  },
+  deleteIconBtn: {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: "4px",
+    color: "var(--text-muted)",
+    display: "flex",
+    alignItems: "center",
+    lineHeight: 1,
+  },
+  // Confirmation sheet
+  sheetTitle: {
+    fontFamily: "var(--font-display)",
+    fontSize: "20px",
+    color: "var(--text-primary)",
+    marginBottom: "8px",
+  },
+  sheetBody: {
+    fontSize: "13px",
+    fontWeight: 300,
+    color: "var(--text-muted)",
+    lineHeight: 1.6,
+    marginBottom: "24px",
+  },
+  destructiveBtn: {
+    background: "#a67b7b",
+    border: "none",
+    borderRadius: "10px",
+    padding: "14px",
+    fontSize: "14px",
+    fontWeight: 500,
+    color: "#1c1a18",
+    cursor: "pointer",
+    fontFamily: "var(--font-body)",
+    width: "100%",
+    marginBottom: "10px",
+  },
 };
 
-function EntryCard({ entry, firstEntryDate }) {
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
+
+function DeleteConfirmSheet({ onConfirm, onCancel, deleting }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 400,
+      display: "flex", flexDirection: "column", justifyContent: "flex-end",
+    }}>
+      <div
+        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }}
+        onClick={onCancel}
+      />
+      <div style={{
+        position: "relative",
+        background: "var(--surface)",
+        borderRadius: "20px 20px 0 0",
+        padding: "28px 20px 48px",
+        borderTop: "1px solid var(--border)",
+      }}>
+        <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "var(--border)", margin: "0 auto 24px" }} />
+        <div style={s.sheetTitle}>Delete this entry?</div>
+        <div style={s.sheetBody}>This can't be undone. The entry and its analysis will be permanently removed.</div>
+        <button
+          style={{ ...s.destructiveBtn, opacity: deleting ? 0.6 : 1 }}
+          onClick={onConfirm}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting..." : "Delete entry"}
+        </button>
+        <button style={s.ghostBtn} onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function EntryCard({ entry, firstEntryDate, onDelete }) {
   const weekNum = entry.week_number || getWeekNumber(entry.date, firstEntryDate);
   const [expanded, setExpanded] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
+  const touchStartX = useRef(null);
+
   const topEmotions = Object.entries(entry.emotions || {})
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
-  return (
-    <div
-      style={{ ...s.entryCard, borderColor: expanded ? "var(--accent)" : "var(--border)" }}
-      onClick={() => setExpanded(!expanded)}
-    >
-      <div style={s.entryDate}>{formatDate(entry.date)}{weekNum ? ` · Week ${weekNum}` : ""}</div>
-      <div style={{ ...s.entryPreview, display: "-webkit-box", WebkitLineClamp: expanded ? "none" : 2, WebkitBoxOrient: "vertical", overflow: expanded ? "visible" : "hidden" }}>
-        {entry.text}
-      </div>
-      <div style={s.pillRow}>
-        {topEmotions.map(([emotion, score]) => (
-          <EmotionPill key={emotion} emotion={emotion} score={score} />
-        ))}
-      </div>
+  function handleTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+  }
 
-      {expanded && (
-        <div style={s.expandedBody}>
-          {entry.themes?.length > 0 && (
-            <>
-              <div style={s.sectionLabel}>Themes</div>
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                {entry.themes.map((t) => <span key={t} style={s.themeChip}>{t}</span>)}
+  function handleTouchMove(e) {
+    if (touchStartX.current === null || expanded) return;
+    const dx = e.touches[0].clientX - touchStartX.current;
+    if (dx < 0) setSwipeX(Math.max(dx, -72));
+  }
+
+  function handleTouchEnd() {
+    if (swipeX < -40) {
+      setSwipeX(-72);
+    } else {
+      setSwipeX(0);
+    }
+    touchStartX.current = null;
+  }
+
+  function handleConfirmDelete() {
+    setDeleting(true);
+    onDelete(entry.entry_id).catch(() => {
+      setDeleting(false);
+      setShowConfirm(false);
+    });
+  }
+
+  return (
+    <>
+      <div style={s.swipeWrapper}>
+        {/* Swipe-revealed delete zone */}
+        {swipeX <= -40 && (
+          <div style={s.swipeDelete} onClick={() => { setSwipeX(0); setShowConfirm(true); }}>
+            <TrashIcon />
+          </div>
+        )}
+        {/* Card */}
+        <div
+          style={{
+            ...s.entryCard,
+            borderColor: expanded ? "var(--accent)" : "var(--border)",
+            transform: `translateX(${swipeX}px)`,
+            transition: swipeX === 0 || swipeX === -72 ? "transform 0.2s ease" : "none",
+            position: "relative",
+          }}
+          onClick={() => { if (swipeX !== 0) { setSwipeX(0); return; } setExpanded(!expanded); }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div style={s.entryDate}>{formatDate(entry.date)}{weekNum ? ` · Week ${weekNum}` : ""}</div>
+          <div style={{ ...s.entryPreview, display: "-webkit-box", WebkitLineClamp: expanded ? "none" : 2, WebkitBoxOrient: "vertical", overflow: expanded ? "visible" : "hidden" }}>
+            {entry.text}
+          </div>
+          <div style={s.pillRow}>
+            {topEmotions.map(([emotion, score]) => (
+              <EmotionPill key={emotion} emotion={emotion} score={score} />
+            ))}
+          </div>
+
+          {expanded && (
+            <div style={s.expandedBody}>
+              {entry.themes?.length > 0 && (
+                <>
+                  <div style={s.sectionLabel}>Themes</div>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {entry.themes.map((t) => <span key={t} style={s.themeChip}>{t}</span>)}
+                  </div>
+                </>
+              )}
+              {entry.recommendations?.length > 0 && (
+                <>
+                  <div style={s.sectionLabel}>Suggested practices</div>
+                  {entry.recommendations.map((r, i) => (
+                    <div key={i} style={s.recItem}>{r}</div>
+                  ))}
+                </>
+              )}
+              {/* Delete button in expanded footer */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "14px", paddingTop: "10px", borderTop: "1px solid var(--border)" }}>
+                <button
+                  style={s.deleteIconBtn}
+                  onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
+                >
+                  <TrashIcon />
+                  <span style={{ marginLeft: "5px", fontSize: "11px", color: "var(--text-muted)" }}>Delete</span>
+                </button>
               </div>
-            </>
-          )}
-          {entry.recommendations?.length > 0 && (
-            <>
-              <div style={s.sectionLabel}>Suggested practices</div>
-              {entry.recommendations.map((r, i) => (
-                <div key={i} style={s.recItem}>{r}</div>
-              ))}
-            </>
+            </div>
           )}
         </div>
+      </div>
+
+      {showConfirm && (
+        <DeleteConfirmSheet
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowConfirm(false)}
+          deleting={deleting}
+        />
       )}
-    </div>
+    </>
   );
 }
 
@@ -315,6 +483,12 @@ export default function Journal({ user, onEntrySubmitted }) {
       .then((data) => { setEntries(data.entries); setLoading(false); })
       .catch(() => setLoading(false));
   }, [user]);
+
+  function handleDelete(entryId) {
+    return deleteEntry(user.user_id, entryId).then(() => {
+      setEntries((prev) => prev.filter((e) => e.entry_id !== entryId));
+    });
+  }
 
   function handleSubmit() {
     if (!text.trim()) return;
@@ -475,6 +649,7 @@ export default function Journal({ user, onEntrySubmitted }) {
               key={entry.entry_id}
               entry={entry}
               firstEntryDate={entries[entries.length - 1]?.date}
+              onDelete={handleDelete}
             />
           ))}
         </div>
