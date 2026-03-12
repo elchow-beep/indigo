@@ -330,7 +330,7 @@ function DeleteConfirmSheet({ onConfirm, onCancel, deleting }) {
         position: "relative",
         background: "var(--surface)",
         borderRadius: "20px 20px 0 0",
-        padding: "28px 20px 48px",
+        padding: "28px 20px 88px",
         borderTop: "1px solid var(--border)",
       }}>
         <div style={{ width: "36px", height: "4px", borderRadius: "2px", background: "var(--border)", margin: "0 auto 24px" }} />
