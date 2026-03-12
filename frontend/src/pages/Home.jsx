@@ -135,7 +135,10 @@ export default function Home({ user, onSwitchProfile }) {
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.user_id === "guest") {
+      setDataLoaded(true);
+      return;
+    }
     setDataLoaded(false);
     let entriesDone = false;
     let insightsDone = false;
@@ -146,12 +149,12 @@ export default function Home({ user, onSwitchProfile }) {
 
     getEntries(user.user_id)
       .then((data) => { if (data.entries.length > 0) setRecentEntry(data.entries[0]); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => { entriesDone = true; checkDone(); });
 
     getInsights(user.user_id)
       .then((data) => { if (data.has_data) setArcSummary(data.arc_summary); })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => { insightsDone = true; checkDone(); });
   }, [user]);
 

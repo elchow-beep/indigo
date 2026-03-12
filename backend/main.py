@@ -169,7 +169,7 @@ def get_insights(user_id: str):
 def create_entry(req: NewEntryRequest):
     ep = get_emotion_pipeline()
     te = get_theme_extractor()
-    emotions = ep.detect(req.text)
+    emotions = ep.analyze(req.text)
     themes = te.extract(req.text)
 
     from src.recommender.recommendation_engine import recommend_practices

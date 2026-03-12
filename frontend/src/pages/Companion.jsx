@@ -345,12 +345,17 @@ export default function Companion({ user, entryContext, onContextUsed }) {
 
   function handleResetClick() {
     if (messages.length === 0) return;
+    if (isGuest) {
+      resetChat("guest").catch(() => { });
+      setMessages([]);
+      return;
+    }
     setShowConfirm(true);
   }
 
   async function confirmReset() {
     setShowConfirm(false);
-    await resetChat(user?.user_id ?? "guest").catch(() => {});
+    await resetChat(user?.user_id ?? "guest").catch(() => { });
     setMessages([]);
   }
 
