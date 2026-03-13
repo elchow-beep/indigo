@@ -407,11 +407,9 @@ export default function Companion({ user, entryContext, onContextUsed }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
 
-      // Placeholder for the streaming assistant message
+      // Bubble is inserted on first real token, not before, to avoid empty placeholder
       let isCrisis = false;
       let firstToken = true;
-
-      setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -434,14 +432,18 @@ export default function Companion({ user, entryContext, onContextUsed }) {
             continue;
           }
 
-          // On first real token, hide the thinking state
+          // On first real token: hide thinking state and insert the bubble
           if (firstToken) {
             firstToken = false;
             setLoading(false);
+            setMessages((prev) => [...prev, { role: "assistant", content: "", streaming: true }]);
           }
 
           // Unescape newlines encoded by the backend
           const token = payload.replace(/\\n/g, "\n");
+
+          // Cosmetic delay -- makes the stream feel considered rather than instant
+          await new Promise((r) => setTimeout(r, 20 + Math.random() * 15));
 
           setMessages((prev) => {
             const updated = [...prev];
