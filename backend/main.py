@@ -72,10 +72,7 @@ USERS_FILE = os.path.join(ROOT, "data", "demo", "users.json")
 # Seeded demo users always shown regardless of age
 SEEDED_USER_IDS = {"user_demo_new", "user_demo_established"}
 
-PROFILE_BLURBS = {
-    "user_demo_new": "New user. No entries yet. Shows the onboarding experience.",
-    "user_demo_established": "11 entries across 6 weeks. Full arc from awe and overwhelm through grief toward gratitude.",
-}
+ESTABLISHED_BLURB_SUFFIX = "Full arc from awe and overwhelm through grief toward gratitude."
 
 SESSION_WINDOW_HOURS = 2
 
@@ -147,10 +144,16 @@ def list_users():
         if user_id not in SEEDED_USER_IDS and not is_recent(user):
             continue
         entry_count = len(user.get("entries", []))
+        if user_id == "user_demo_established":
+            context_blurb = f"{entry_count} entries across 6 weeks. {ESTABLISHED_BLURB_SUFFIX}"
+        elif entry_count == 0:
+            context_blurb = "New user. No entries yet."
+        else:
+            context_blurb = f"{entry_count} entries"
         profiles.append({
             "user_id": user_id,
             "display_name": user.get("name", user_id),
-            "context_blurb": PROFILE_BLURBS.get(user_id, "New user"),
+            "context_blurb": context_blurb,
             "entry_count": entry_count,
         })
     return {"users": profiles}
