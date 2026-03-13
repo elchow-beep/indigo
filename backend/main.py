@@ -13,7 +13,7 @@ import json
 import os
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -68,10 +68,15 @@ def get_rag_pipeline():
 
 USERS_FILE = os.path.join(ROOT, "data", "demo", "users.json")
 
+# Seeded demo users always shown regardless of age
+SEEDED_USER_IDS = {"user_demo_new", "user_demo_established"}
+
 PROFILE_BLURBS = {
     "user_demo_new": "New user. No entries yet. Shows the onboarding experience.",
     "user_demo_established": "11 entries across 6 weeks. Full arc from awe and overwhelm through grief toward gratitude.",
 }
+
+SESSION_WINDOW_HOURS = 2
 
 
 def load_users_data():
@@ -90,6 +95,23 @@ def find_user(user_id):
         if user["user_id"] == user_id:
             return user
     raise HTTPException(status_code=404, detail=f"User '{user_id}' not found")
+
+
+def is_recent(user):
+    """Returns True if user was created within SESSION_WINDOW_HOURS."""
+    created_at = user.get("created_at")
+    if not created_at:
+        return False
+    created = datetime.fromisoformat(created_at)
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    age = datetime.now(timezone.utc) - created
+    return age <= timedelta(hours=SESSION_WINDOW_HOURS)
+
+
+class CreateUserRequest(BaseModel):
+    name: str
+    experience_date: str  # YYYY-MM-DD
 
 
 class NewEntryRequest(BaseModel):
@@ -119,14 +141,46 @@ def list_users():
     profiles = []
     for user in data["users"]:
         user_id = user["user_id"]
+        # Always include seeded demo users; for created users, only include recent ones
+        if user_id not in SEEDED_USER_IDS and not is_recent(user):
+            continue
         entry_count = len(user.get("entries", []))
         profiles.append({
             "user_id": user_id,
             "display_name": user.get("name", user_id),
-            "context_blurb": PROFILE_BLURBS.get(user_id, ""),
+            "context_blurb": PROFILE_BLURBS.get(user_id, "New user"),
             "entry_count": entry_count,
         })
     return {"users": profiles}
+
+
+@app.post("/users")
+def create_user(req: CreateUserRequest):
+    name = req.name.strip()
+    if not name or len(name) > 40:
+        raise HTTPException(status_code=422, detail="Name must be between 1 and 40 characters")
+
+    new_user = {
+        "user_id": "user_" + str(uuid.uuid4())[:8],
+        "name": name,
+        "experience_date": req.experience_date,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "entries": [],
+    }
+
+    data = load_users_data()
+    data["users"].append(new_user)
+    save_users_data(data)
+
+    return {
+        "user_id": new_user["user_id"],
+        "display_name": name,
+        "context_blurb": "New user",
+        "entry_count": 0,
+        "experience_date": req.experience_date,
+        "entries": [],
+        "is_new": True,
+    }
 
 
 @app.get("/users/{user_id}/entries")
