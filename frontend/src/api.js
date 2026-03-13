@@ -26,6 +26,21 @@ export function getUsers() {
   return request("/users");
 }
 
+// Creates a session-only user object.
+// When POST /users is ready, replace the return below with a request("/users", ...)
+// call and return the server-assigned user object instead.
+export function createUser(name, experienceDate) {
+  return {
+    user_id: "user_" + Date.now(),
+    display_name: name,
+    experience_date: experienceDate,
+    context_blurb: "New user",
+    entry_count: 0,
+    entries: [],
+    is_new: true,
+  };
+}
+
 // ---- Journal entries ----
 
 export function getEntries(userId) {

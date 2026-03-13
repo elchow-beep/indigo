@@ -2,6 +2,8 @@ import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import Login from "./pages/Login.jsx";
+import Signup from "./pages/Signup.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 import Home from "./pages/Home.jsx";
 import Journal from "./pages/Journal.jsx";
 import Insights from "./pages/Insights.jsx";
@@ -18,6 +20,11 @@ function AppRoutes({ user, setUser, entryContext, setEntryContext }) {
     setEntryContext(null);
   }
 
+  function handleCreateUser(newUser) {
+    setUser(newUser);
+    setEntryContext(null);
+  }
+
   function handleSwitchProfile() {
     setUser(null);
     setEntryContext(null);
@@ -28,6 +35,8 @@ function AppRoutes({ user, setUser, entryContext, setEntryContext }) {
       <div key={location.pathname} className="page-transition">
         <Routes>
           <Route path="/login" element={<Login onSelectUser={handleSelectUser} />} />
+          <Route path="/signup" element={<Signup onCreateUser={handleCreateUser} />} />
+          <Route path="/onboarding" element={<Onboarding user={user} />} />
           <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />} />
           <Route path="/home" element={isLoggedIn ? <Home user={user} onSwitchProfile={handleSwitchProfile} /> : <Navigate to="/login" replace />} />
           <Route path="/journal" element={isLoggedIn ? <Journal user={user} onEntrySubmitted={setEntryContext} /> : <Navigate to="/login" replace />} />

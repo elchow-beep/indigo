@@ -121,7 +121,7 @@ const s = {
     cursor: "pointer",
     fontFamily: "var(--font-body)",
     transition: "border-color 0.15s, color 0.15s",
-    marginBottom: "20px",
+    marginBottom: "12px",
   },
   disclaimer: {
     display: "inline-flex",
@@ -223,6 +223,10 @@ export default function Login({ onSelectUser }) {
 
       <button style={s.ghostBtn} onClick={handleGuest}>
         Chat with Indy as a guest
+      </button>
+
+      <button style={{ ...s.ghostBtn, marginBottom: "20px" }} onClick={() => navigate("/signup")}>
+        Create a new profile
       </button>
 
       <div style={s.disclaimer}>
