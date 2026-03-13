@@ -168,11 +168,13 @@ export default function Home({ user, onSwitchProfile }) {
     try {
       await postCheckin(user.user_id, checkinEmotion);
       setCheckinStatus("done");
+      // Show confirmation for 1.5s, then close the sheet
       setTimeout(() => {
         setSheetOpen(false);
         setTappedMood(null);
-        setCheckinStatus(null);
-      }, 1200);
+        // Reset status after sheet animation finishes so text doesn't flicker
+        setTimeout(() => setCheckinStatus(null), 300);
+      }, 1500);
     } catch {
       setCheckinStatus(null);
     }
