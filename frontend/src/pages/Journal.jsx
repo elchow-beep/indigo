@@ -197,7 +197,7 @@ const s = {
     border: "1px solid var(--border)",
     borderRadius: "var(--radius-md)",
     padding: "16px",
-    fontSize: "14px",
+    fontSize: "16px",
     fontWeight: 300,
     color: "var(--text-primary)",
     fontFamily: "var(--font-body)",

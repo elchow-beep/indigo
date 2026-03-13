@@ -67,7 +67,7 @@ const s = {
     border: "1px solid var(--border)",
     borderRadius: "10px",
     padding: "12px 14px",
-    fontSize: "14px",
+    fontSize: "16px",
     color: "var(--text-primary)",
     fontFamily: "var(--font-body)",
     fontWeight: 300,
