@@ -57,11 +57,17 @@ export function createEntry(userId, text, weekNumber = null, entryType = "journa
 }
 
 // ---- Quick check-in ----
+// Reuses POST /entries with entry_type "checkin". No separate /checkin endpoint exists.
 
 export function postCheckin(userId, emotion) {
-  return request("/checkin", {
+  return request("/entries", {
     method: "POST",
-    body: JSON.stringify({ user_id: userId, emotion }),
+    body: JSON.stringify({
+      user_id: userId,
+      text: `Quick check-in: ${emotion}`,
+      entry_type: "checkin",
+      checkin_emotion: emotion,
+    }),
   });
 }
 

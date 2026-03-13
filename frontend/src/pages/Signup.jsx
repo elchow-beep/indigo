@@ -106,6 +106,7 @@ export default function Signup({ onCreateUser }) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [experienceDate, setExperienceDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -113,11 +114,16 @@ export default function Signup({ onCreateUser }) {
   const dateValid = experienceDate.length > 0 && experienceDate <= today;
   const canSubmit = nameValid && dateValid;
 
-  function handleSubmit() {
-    if (!canSubmit) return;
-    const newUser = createUser(name.trim(), experienceDate);
-    onCreateUser(newUser);
-    navigate("/onboarding");
+  async function handleSubmit() {
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    try {
+      const newUser = await createUser(name.trim(), experienceDate);
+      onCreateUser(newUser);
+      navigate("/onboarding");
+    } catch {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -164,11 +170,11 @@ export default function Signup({ onCreateUser }) {
       </div>
 
       <button
-        style={s.primaryBtn(canSubmit)}
+        style={s.primaryBtn(canSubmit && !submitting)}
         onClick={handleSubmit}
-        disabled={!canSubmit}
+        disabled={!canSubmit || submitting}
       >
-        Create profile
+        {submitting ? "Setting up your profile..." : "Create profile"}
       </button>
     </div>
   );
